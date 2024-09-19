@@ -12,15 +12,21 @@ def read_excel_file(path:str) -> pd.DataFrame:
     print(excel_data.head())
     return excel_data
 
+def clean_dataframe(df:pd.DataFrame) -> pd.DataFrame:
+    df_cleaned = df.drop(columns=['Helptext'])  # Replace 'Helptext' with the correct column if necessary
+    return df_cleaned
+
 def make_dims(df:pd.DataFrame)-> dict:
     dimensions = {}
     dimensions["dim_energy_category"] = make_dim_energy_category(df)
+    dimensions["dim_energy_subcategory"] = make_dim_energy_subcategory(df)
     dimensions["dim_date"]  = make_dim_date(df)
     dimensions["dim_flow_direction"]  = make_dim_flow_direction(df)
     dimensions["dim_metric"]  = make_dim_metric(df)
 
     # Preview dimension tables
     print("Dimension - Energy Category:\n", dimensions["dim_energy_category"] )
+    print("Dimension - Energy Sub Category:\n", dimensions["dim_energy_subcategory"] )
     print("Dimension - Date:\n", dimensions["dim_date"] )
     print("Dimension - Flow Direction:\n", dimensions["dim_flow_direction"] )
     print("Dimension - Metric:\n", dimensions["dim_metric"] )
@@ -31,13 +37,22 @@ def make_dim_energy_category(df:pd.DataFrame):
     """
     energyCategory.id
     energyCategory.name
+    """
+    # Dimension - Energy Category & SubCategory
+    dim_energy_category = df[['energyCategory.name']].drop_duplicates().reset_index(drop=True)
+    dim_energy_category['energyCategory.id'] = dim_energy_category.index + 1
+    return dim_energy_category
+
+
+def make_dim_energy_subcategory(df:pd.DataFrame):
+    """
+    energySubCategory.id
     energySubCategory.name
     """
     # Dimension - Energy Category & SubCategory
-    dim_energy_category = df[['energyCategory.name', 'energySubCategory.name']].drop_duplicates().reset_index(drop=True)
-    dim_energy_category['energyCategory.id'] = dim_energy_category.index + 1
-    dim_energy_category['energySubCategory.id'] = dim_energy_category.index + 1
-    return dim_energy_category
+    dim_energy_subcategory = df[['energySubCategory.name']].drop_duplicates().reset_index(drop=True)
+    dim_energy_subcategory['energySubCategory.id'] = dim_energy_subcategory.index + 1
+    return dim_energy_subcategory
 
 def make_dim_date(df:pd.DataFrame):
     """
@@ -47,9 +62,7 @@ def make_dim_date(df:pd.DataFrame):
     # Dimension - Date (extracting year from date column)
     dim_date = df[['date.name']].drop_duplicates().reset_index(drop=True)
     dim_date['date.id'] = dim_date.index + 1
-    dim_date['year'] = pd.to_datetime(dim_date['date.name']).dt.year  # Extract year
     return dim_date
-
 
 def make_dim_flow_direction(df:pd.DataFrame):
     """
@@ -82,15 +95,29 @@ def make_fact_energy_metrics(df:pd.DataFrame, dimensions:dict):
     metric_value
     """
     dim_energy_category = dimensions["dim_energy_category"]
+    dim_energy_sub_category = dimensions["dim_energy_subcategory"]
     dim_date = dimensions["dim_date"]
     dim_flow_direction = dimensions["dim_flow_direction"]
     dim_metric = dimensions["dim_metric"]
 
-    # Create the fact table by merging all dimension tables with the raw data
-    fact_energy_metrics = df.merge(dim_energy_category, left_on=['energyCategory.id', 'energySubCategory.id'], right_on=['energyCategory.id', 'energySubCategory.id'])\
-                            .merge(dim_date, left_on='date.id', right_on='date.id')\
-                            .merge(dim_flow_direction, left_on='flowDirection.id', right_on='flowDirection.id')\
-                            .merge(dim_metric, on=['metric.id', 'metric.unit'], how='left')
+    # # Create the fact table by merging all dimension tables with the raw data
+    # fact_energy_metrics = df.merge(dim_energy_category, on=['energyCategory.id', 'energySubCategory.id'])\
+    #                         .merge(dim_date, left_on='date.id', right_on='date.id')\
+    #                         .merge(dim_flow_direction, on='flowDirection.id')\
+    #                         .merge(dim_metric, on=['metric.id', 'metric.unit'], how='left')
+
+    # # Create the final fact table with only IDs and metric_value
+    # fact_energy_metrics = fact_energy_metrics[['energyCategory.id', 'energySubCategory.id', 'date.id', 'flowDirection.id', 'metric.id', 'metric.value']]
+
+    # # Preview the fact table
+    # print("Fact Table:\n", fact_energy_metrics)
+
+    # Merge the DataFrame with dimension tables using the IDs instead of the names
+    fact_energy_metrics = df.merge(dim_energy_category, on='energyCategory.name', how='left')\
+                            .merge(dim_energy_sub_category, on='energySubCategory.name', how='left')\
+                            .merge(dim_date, on='date.name', how='left')\
+                            .merge(dim_flow_direction, on='flowDirection.name', how='left')\
+                            .merge(dim_metric, on=['metric.name', 'metric.unit'], how='left')
 
     # Create the final fact table with only IDs and metric_value
     fact_energy_metrics = fact_energy_metrics[['energyCategory.id', 'energySubCategory.id', 'date.id', 'flowDirection.id', 'metric.id', 'metric.value']]
@@ -99,8 +126,10 @@ def make_fact_energy_metrics(df:pd.DataFrame, dimensions:dict):
     print("Fact Table:\n", fact_energy_metrics)
 
 
+#TODO patch the MWh and mwh
 
 if __name__ == '__main__':
     df = read_excel_file(file_path)
+    df = clean_dataframe(df)
     dimensions = make_dims(df)
     fact_energy_metrics = make_fact_energy_metrics(df, dimensions)
