@@ -59,6 +59,7 @@ def make_fact_energy_metrics(df: pd.DataFrame, dimensions: dict):
 
     # Preview the fact table
     print("Fact Table:\n", fact_energy_metrics)
+    return fact_energy_metrics
 
 
 def validate_energy_relationships(
@@ -76,18 +77,18 @@ def validate_energy_relationships(
     # Create a mapping of subcategories to their associated categories
     # TODO : Read it from a file. Shouldn't be hardcoded.
     valid_relationships = {
-        "Coal and coal products": ["Fossil"],
-        "Crude oil and petroleum products": ["Fossil"],
-        "Natural gas": ["Fossil"],
-        "Other fossil": ["Fossil"],
-        "Purchased or acquired electricity, heat, steam, and cooling": [
+        "coal and coal products": ["Fossil"],
+        "crude oil and petroleum products": ["Fossil"],
+        "natural gas": ["Fossil"],
+        "other fossil": ["Fossil"],
+        "purchased or acquired electricity, heat, steam, and cooling": [
             "Fossil",
             "Renewable",
         ],
-        "Fuel (incl. biomass)": ["Renewable"],
-        "Self-generated non-fuel energy": ["Renewable"],
-        "Wind": ["Renewable"],
-        "Solar": ["Renewable"],
+        "fuel (incl. biomass)": ["Renewable"],
+        "self-generated non-fuel energy": ["Renewable"],
+        "wind": ["Renewable"],
+        "solar": ["Renewable"],
     }
 
     # Check each row in the fact DataFrame
@@ -110,11 +111,14 @@ def validate_energy_relationships(
 
         subcategory_name = subcategory_name[0]
 
-        # Check if the subcategory has valid associated categories
-        expected_categories = valid_relationships.get(subcategory_name, "Not found")
-
         if pd.isna(subcategory_name):
             continue  # Skip NaN for the empty subcategories
+
+        # Check if the subcategory has valid associated categories
+        expected_categories = valid_relationships.get(
+            subcategory_name.lower(), "Not found"
+        )
+
         if expected_categories == "Not found":
             raise ValueError(
                 f"Subcategory name '{subcategory_name}' not found in valid relationship."
