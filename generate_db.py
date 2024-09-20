@@ -1,12 +1,15 @@
 import psycopg2
+from custom_library import load_db_credentials
+
+credentials = load_db_credentials("database_credentials.json")
 
 # Connect to PostgreSQL
 conn = psycopg2.connect(
-    dbname="energy_db",
-    user="your_username",
-    password="your_password",
-    host="localhost",
-    port="5432",
+    dbname=credentials["dbname"],
+    user=credentials["user"],
+    password=credentials["password"],
+    host=credentials["host"],
+    port=credentials["port"],
 )
 cursor = conn.cursor()
 

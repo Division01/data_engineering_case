@@ -6,7 +6,7 @@ from dim_energy_category import make_dim_energy_category
 from dim_energy_sub_category import make_dim_energy_subcategory
 from dim_flow_direction import make_dim_flow_direction
 from dim_metric import make_dim_metric
-from custom_library import resolve_case_typos, check_for_duplicates
+from custom_library import clean_data, load_db_credentials
 from fact_energy_metrics import make_fact_energy_metrics
 
 # file_path = "Case - Energy consumption and production modif.xlsx"
@@ -150,13 +150,15 @@ def load_fact(df_fact: pd.DataFrame) -> None:
     """
     Loads fact_energy_metrics table into PostgreSQL database.
     """
+    credentials = load_db_credentials("database_credentials.json")
+
     # Connect to PostgreSQL
     conn = psycopg2.connect(
-        dbname="energy_db",
-        user="your_username",
-        password="your_password",
-        host="localhost",
-        port="5432",
+        dbname=credentials["dbname"],
+        user=credentials["user"],
+        password=credentials["password"],
+        host=credentials["host"],
+        port=credentials["port"],
     )
     cursor = conn.cursor()
     cursor.execute("SET search_path TO public;")
@@ -224,15 +226,11 @@ def load_fact(df_fact: pd.DataFrame) -> None:
 
 if __name__ == "__main__":
 
-    # Read Excel file
+    ## EXTRACT
     df = pd.read_excel(file_path, header=1)
-    df = df.drop(columns=["Helptext"])
 
-    # Resolve case issues and check for duplicates
-    for col in df.columns:
-        df[col] = resolve_case_typos(df[col])
-
-    df = check_for_duplicates(df)
+    ## TRANSFORM
+    df = clean_data(df)
 
     # Create dimensions and load them into the database
     dimensions = make_dims(df)
@@ -240,4 +238,6 @@ if __name__ == "__main__":
 
     # Create fact table and load into the database
     fact_energy_metrics = make_fact_energy_metrics(df, dimensions)
+
+    ## LOAD
     load_fact(fact_energy_metrics)

@@ -1,7 +1,7 @@
 import pandas as pd
 from datetime import datetime
 import os
-from fuzzywuzzy import process
+import json
 
 
 def resolve_case_typos(column: pd.DataFrame) -> pd.DataFrame:
@@ -31,45 +31,6 @@ def resolve_case_typos(column: pd.DataFrame) -> pd.DataFrame:
     else:
         print("Not a string type column.")
         return column
-
-
-# Function to group similar values and choose the most frequent one
-def resolve_typos(column):
-    """
-    NOT WORKING.
-    Was intended to see the similarity between values to get rid of typo.
-    It doesn't work yet, need to be refactored.
-
-    Args:
-        column (_type_): _description_
-
-    Returns:
-        _type_: _description_
-    """
-    unique_values = column.unique()
-    print("unique : %s", unique_values)
-    # Dictionary to store the correct (majority) values
-    resolved_values = {}
-
-    for value in unique_values:
-        # Find close matches (within 90% similarity)
-        similar_values = process.extractBests(value, unique_values, score_cutoff=90)
-        print("similar : %s", similar_values)
-        # [('MWh', 100), ('Mwh', 100)]
-
-        # Get the majority value from the similar ones
-        similar_values = [x[0] for x in similar_values]
-        majority_value = column[column.isin(similar_values)].mode()[
-            0
-        ]  # Find the most frequent one
-        print("majority_value : %s", majority_value)
-        # MWh
-
-        # Map all similar values to the majority value
-        for similar in similar_values:
-            resolved_values[similar] = majority_value
-
-    return column.replace(resolved_values)
 
 
 def check_for_duplicates(df: pd.DataFrame):
@@ -119,6 +80,23 @@ def check_data_types(df: pd.DataFrame, expected_types: dict):
                 f"Column '{column}' has type {df[column].dtype}, expected {expected_type}."
             )
     print("All data types match the expected values.")
+
+
+def clean_data(df: pd.DataFrame) -> pd.DataFrame:
+    df = df.drop(columns=["Helptext"])
+
+    # Resolve case issues and check for duplicates
+    for col in df.columns:
+        df[col] = resolve_case_typos(df[col])
+
+    df = check_for_duplicates(df)
+    return df
+
+
+def load_db_credentials(json_file_path):
+    with open(json_file_path, "r") as file:
+        credentials = json.load(file)
+    return credentials
 
 
 if __name__ == "__main__":

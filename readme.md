@@ -49,21 +49,19 @@ Data validation checks are performed to ensure:
 - Correct data types for each column.
 - Valid relationships between energy categories and subcategories.
 
-## Future Work
-- Implement the database schema in PostgreSQL.
-- Develop scripts to load the transformed data into the database.
-- Create BI dashboards to visualize energy consumption data with different breakdowns and drill-through functionality.
 
 ## Requirements
 - Python 3.x
 - Pandas
 - PostgreSQL (or another database of choice)
-- Additional libraries for data visualization (e.g., Matplotlib, Seaborn)
 
 ## How to Run
-1. Set up the database schema as outlined in the project structure.
-2. Run the ETL scripts to extract, transform, and load data.
-3. Use your preferred BI tool to connect to the database and visualize the data.
+1. Set up the database schema as outlined in the project structure. You can also run the generate_db.py if you already have a postrgresql database.
+2. Replace database_credentials_example.json with your data, drop the _example to make it readable by the script.
+3. Run main.py to run the ETL scripts to extract, transform, and load all data at once. An version with separate scripts to work on all dimensions on its own to parallelize the process is beging developped.
+4. Use your preferred BI tool to connect to the database and visualize the data.
 
-## License
-This project is licensed under the MIT License.
+## Future Work
+- A better data validation function to catch typos.
+- Patch the scripts to make them work in parallel if an orchestrator needs it.
+- Create BI dashboards to visualize energy consumption data with different breakdowns and drill-through functionality.
