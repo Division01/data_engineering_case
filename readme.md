@@ -61,6 +61,10 @@ Data validation checks are performed to ensure:
 3. Run main.py to run the ETL scripts to extract, transform, and load all data at once. An version with separate scripts to work on all dimensions on its own to parallelize the process is beging developped.
 4. Use your preferred BI tool to connect to the database and visualize the data.
 
+## Restore the database 
+To restore the database from the .sql file, run the database/database_backup.sql file in a PostgreSQL instance.
+This wouldn't make sense as the whole point of the excercise was to create a Database with the data from the excel, but whatever floats your boat.
+
 ## Future Work
 - A better data validation function to catch typos.
 - Patch the scripts to make them work in parallel if an orchestrator needs it.
