@@ -1,13 +1,13 @@
 import pandas as pd
 import psycopg2
 import numpy as np
-from dim_date import make_dim_date
-from dim_energy_category import make_dim_energy_category
-from dim_energy_sub_category import make_dim_energy_subcategory
-from dim_flow_direction import make_dim_flow_direction
-from dim_metric import make_dim_metric
+from dimensions.dim_date import make_dim_date
+from dimensions.dim_energy_category import make_dim_energy_category
+from dimensions.dim_energy_sub_category import make_dim_energy_subcategory
+from dimensions.dim_flow_direction import make_dim_flow_direction
+from dimensions.dim_metric import make_dim_metric
 from custom_library import clean_data, load_db_credentials
-from fact_energy_metrics import make_fact_energy_metrics
+from facts.fact_energy_metrics import make_fact_energy_metrics
 
 # file_path = "Case - Energy consumption and production modif.xlsx"
 file_path = "Case - Energy consumption and production.xlsx"
