@@ -1,4 +1,7 @@
 import pandas as pd
+from custom_library import load_db_credentials
+import psycopg2
+import numpy as np
 
 
 def make_fact_energy_metrics(df: pd.DataFrame, dimensions: dict):
@@ -144,3 +147,81 @@ def validate_energy_relationships(
             )
 
     print("All subcategory relationships are valid in the fact table.")
+
+
+def load_fact(df_fact: pd.DataFrame) -> None:
+    """
+    Loads fact_energy_metrics table into PostgreSQL database.
+    """
+    credentials = load_db_credentials("database_credentials.json")
+
+    # Connect to PostgreSQL
+    conn = psycopg2.connect(
+        dbname=credentials["dbname"],
+        user=credentials["user"],
+        password=credentials["password"],
+        host=credentials["host"],
+        port=credentials["port"],
+    )
+    cursor = conn.cursor()
+    cursor.execute("SET search_path TO public;")
+
+    # Example of converting NumPy types to native Python types
+    for index, row in df_fact.iterrows():
+        category_id = (
+            float(row["energyCategory.id"])
+            if isinstance(row["energyCategory.id"], np.float64)
+            else row["energyCategory.id"]
+        )
+        subcategory_id = (
+            float(row["energySubCategory.id"])
+            if isinstance(row["energySubCategory.id"], np.float64)
+            else row["energySubCategory.id"]
+        )
+        date_id = (
+            int(row["date.id"])
+            if isinstance(row["date.id"], np.float64)
+            else row["date.id"]
+        )
+        flow_direction_id = (
+            int(row["flowDirection.id"])
+            if isinstance(row["flowDirection.id"], np.float64)
+            else row["flowDirection.id"]
+        )
+        metric_id = (
+            int(row["metric.id"])
+            if isinstance(row["metric.id"], np.float64)
+            else row["metric.id"]
+        )
+        metric_value = (
+            float(row["metric.value"])
+            if isinstance(row["metric.value"], np.float64)
+            else row["metric.value"]
+        )
+
+        cursor.execute(
+            """
+            INSERT INTO fact_energy_metrics (
+                energyCategory_id,
+                energySubCategory_id,
+                date_id,
+                flowDirection_id,
+                metric_id,
+                metric_value
+            )
+            VALUES (%s, %s, %s, %s, %s, %s)
+            """,
+            (
+                category_id,
+                subcategory_id,
+                date_id,
+                flow_direction_id,
+                metric_id,
+                metric_value,
+            ),
+        )
+
+    # Commit changes and close the connection
+    conn.commit()
+    cursor.close()
+    conn.close()

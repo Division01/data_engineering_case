@@ -56,10 +56,14 @@ Data validation checks are performed to ensure:
 - PostgreSQL (or another database of choice)
 
 ## How to Run
-1. Set up the database schema as outlined in the project structure. You can also run the generate_db.py if you already have a postrgresql database.
-2. Replace database_credentials_example.json with your data, drop the _example to make it readable by the script.
-3. Run main.py to run the ETL scripts to extract, transform, and load all data at once. An version with separate scripts to work on all dimensions on its own to parallelize the process is beging developped.
-4. Use your preferred BI tool to connect to the database and visualize the data.
+1. Set up a database or a database container. I used for the project : 
+```bash
+docker run --name test_postgres_db -e POSTGRES_USER=admin -e POSTGRES_PASSWORD=admin -e POSTGRES_DB=test_db -p 5432:5432 -d postgres
+```
+2. Set up the database schema as outlined in the project structure. You can also run the generate_db.py if you already have a postrgresql database.
+3. Replace database_credentials_example.json with your data, drop the _example to make it readable by the script.
+4. Run main.py to run the ETL scripts to extract, transform, and load all data at once. An version with separate scripts to work on all dimensions on its own to parallelize the process is beging developped.
+5. Use your preferred BI tool to connect to the database and visualize the data.
 
 ## Restore the database 
 To restore the database from the .sql file, run the database/database_backup.sql file in a PostgreSQL instance.
@@ -67,5 +71,4 @@ This wouldn't make sense as the whole point of the excercise was to create a Dat
 
 ## Future Work
 - A better data validation function to catch typos.
-- Patch the scripts to make them work in parallel if an orchestrator needs it.
-- Create BI dashboards to visualize energy consumption data with different breakdowns and drill-through functionality.
+- Add the structure from excel for EnergyCategory, SubCategory and FlowDirection.

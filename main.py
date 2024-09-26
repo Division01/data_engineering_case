@@ -6,11 +6,12 @@ from dimensions.dim_energy_category import make_dim_energy_category
 from dimensions.dim_energy_sub_category import make_dim_energy_subcategory
 from dimensions.dim_flow_direction import make_dim_flow_direction
 from dimensions.dim_metric import make_dim_metric
-from custom_library import clean_data, load_db_credentials
-from facts.fact_energy_metrics import make_fact_energy_metrics
+from custom_library import clean_data
+from facts.fact_energy_metrics import make_fact_energy_metrics, load_fact
+from config import EXCEL_MAIN_DATA_FILE_PATH
 
 # file_path = "Case - Energy consumption and production modif.xlsx"
-file_path = "Case - Energy consumption and production.xlsx"
+file_path = EXCEL_MAIN_DATA_FILE_PATH
 
 
 def make_dims(df: pd.DataFrame) -> dict:
@@ -141,84 +142,6 @@ def load_dimensions(dimensions: dict) -> None:
         )
 
     # Commit changes
-    conn.commit()
-    cursor.close()
-    conn.close()
-
-
-def load_fact(df_fact: pd.DataFrame) -> None:
-    """
-    Loads fact_energy_metrics table into PostgreSQL database.
-    """
-    credentials = load_db_credentials("database_credentials.json")
-
-    # Connect to PostgreSQL
-    conn = psycopg2.connect(
-        dbname=credentials["dbname"],
-        user=credentials["user"],
-        password=credentials["password"],
-        host=credentials["host"],
-        port=credentials["port"],
-    )
-    cursor = conn.cursor()
-    cursor.execute("SET search_path TO public;")
-
-    # Example of converting NumPy types to native Python types
-    for index, row in df_fact.iterrows():
-        category_id = (
-            float(row["energyCategory.id"])
-            if isinstance(row["energyCategory.id"], np.float64)
-            else row["energyCategory.id"]
-        )
-        subcategory_id = (
-            float(row["energySubCategory.id"])
-            if isinstance(row["energySubCategory.id"], np.float64)
-            else row["energySubCategory.id"]
-        )
-        date_id = (
-            int(row["date.id"])
-            if isinstance(row["date.id"], np.float64)
-            else row["date.id"]
-        )
-        flow_direction_id = (
-            int(row["flowDirection.id"])
-            if isinstance(row["flowDirection.id"], np.float64)
-            else row["flowDirection.id"]
-        )
-        metric_id = (
-            int(row["metric.id"])
-            if isinstance(row["metric.id"], np.float64)
-            else row["metric.id"]
-        )
-        metric_value = (
-            float(row["metric.value"])
-            if isinstance(row["metric.value"], np.float64)
-            else row["metric.value"]
-        )
-
-        cursor.execute(
-            """
-            INSERT INTO fact_energy_metrics (
-                energyCategory_id,
-                energySubCategory_id,
-                date_id,
-                flowDirection_id,
-                metric_id,
-                metric_value
-            )
-            VALUES (%s, %s, %s, %s, %s, %s)
-            """,
-            (
-                category_id,
-                subcategory_id,
-                date_id,
-                flow_direction_id,
-                metric_id,
-                metric_value,
-            ),
-        )
-
-    # Commit changes and close the connection
     conn.commit()
     cursor.close()
     conn.close()

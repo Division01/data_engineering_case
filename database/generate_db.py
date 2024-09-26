@@ -1,7 +1,8 @@
 import psycopg2
-from custom_library import load_db_credentials
+import json
 
-credentials = load_db_credentials("database_credentials.json")
+with open("database_credentials.json", "r") as file:
+    credentials = json.load(file)
 
 # Connect to PostgreSQL
 conn = psycopg2.connect(

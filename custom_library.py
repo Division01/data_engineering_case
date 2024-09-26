@@ -83,6 +83,18 @@ def check_data_types(df: pd.DataFrame, expected_types: dict):
 
 
 def clean_data(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Cleans raw dataframe.
+    First drops the helptext column.
+    Then resolve case typos so that "Mwh" and MWh" is the same.
+    Finaly check for duplicates before returning the dataframe.
+
+    Args:
+        df (pd.DataFrame): Input raw dataframe.
+
+    Returns:
+        pd.DataFrame: Cleaned dataframe
+    """
     df = df.drop(columns=["Helptext"])
 
     # Resolve case issues and check for duplicates
