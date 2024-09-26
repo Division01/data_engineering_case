@@ -47,9 +47,9 @@ class DimensionDate(Dimension):
         for index, row in self.dim.iterrows():
             cursor.execute(
                 """
-                INSERT INTO dim_date (date_id, date_name)
+                INSERT INTO dim_date (id, name)
                 VALUES (%s, %s)
-                ON CONFLICT (date_id) DO NOTHING;
+                ON CONFLICT (id) DO NOTHING;
                 """,
                 (
                     (

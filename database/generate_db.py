@@ -18,8 +18,9 @@ cursor = conn.cursor()
 cursor.execute(
     """
 CREATE TABLE dim_energy_category (
-    energyCategory_id SERIAL PRIMARY KEY,
-    energyCategory_name VARCHAR(255) NOT NULL
+    id SERIAL PRIMARY KEY,
+    description TEXT,
+    name VARCHAR(255) NOT NULL
 );
 """
 )
@@ -27,8 +28,10 @@ CREATE TABLE dim_energy_category (
 cursor.execute(
     """
 CREATE TABLE dim_energy_subcategory (
-    energySubCategory_id SERIAL PRIMARY KEY,
-    energySubCategory_name VARCHAR(255)
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255),
+    description TEXT,
+    associatedEnergyCategory VARCHAR(255)
 );
 """
 )
@@ -36,8 +39,8 @@ CREATE TABLE dim_energy_subcategory (
 cursor.execute(
     """
 CREATE TABLE dim_date (
-    date_id SERIAL PRIMARY KEY,
-    date_name INT NOT NULL
+    id SERIAL PRIMARY KEY,
+    name INT NOT NULL
 );
 """
 )
@@ -45,8 +48,9 @@ CREATE TABLE dim_date (
 cursor.execute(
     """
 CREATE TABLE dim_flow_direction (
-    flowDirection_id SERIAL PRIMARY KEY,
-    flowDirection_name VARCHAR(255) NOT NULL
+    id SERIAL PRIMARY KEY,
+    description TEXT,
+    name VARCHAR(255) NOT NULL
 );
 """
 )
@@ -54,9 +58,9 @@ CREATE TABLE dim_flow_direction (
 cursor.execute(
     """
 CREATE TABLE dim_metric (
-    metric_id SERIAL PRIMARY KEY,
-    metric_name VARCHAR(255) NOT NULL,
-    metric_unit VARCHAR(50)
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    unit VARCHAR(50)
 );
 """
 )
@@ -65,11 +69,12 @@ CREATE TABLE dim_metric (
 cursor.execute(
     """
 CREATE TABLE fact_energy_metrics (
-    energyCategory_id INT REFERENCES dim_energy_category(energyCategory_id),
-    energySubCategory_id INT REFERENCES dim_energy_subcategory(energySubCategory_id),
-    date_id INT REFERENCES dim_date(date_id),
-    flowDirection_id INT REFERENCES dim_flow_direction(flowDirection_id),
-    metric_id INT REFERENCES dim_metric(metric_id),
+    id SERIAL PRIMARY KEY,
+    energyCategory_id INT REFERENCES dim_energy_category(id),
+    energySubCategory_id INT REFERENCES dim_energy_subcategory(id),
+    date_id INT REFERENCES dim_date(id),
+    flowDirection_id INT REFERENCES dim_flow_direction(id),
+    metric_id INT REFERENCES dim_metric(id),
     metric_value FLOAT
 );
 """

@@ -29,6 +29,26 @@ def make_fact_energy_metrics(df: pd.DataFrame, dimensions: dict):
     dim_flow_direction = dimensions["dim_flow_direction"]
     dim_metric = dimensions["dim_metric"]
 
+    # Replace missing values in the fact DataFrame with "Unknown"
+    df["energySubCategory.name"] = df["energySubCategory.name"].fillna("Unknown")
+
+    # Convert the relevant columns to lowercase for case-insensitive matching
+    df["energyCategory.name"] = df["energyCategory.name"].str.lower()
+    df["energySubCategory.name"] = df["energySubCategory.name"].str.lower()
+    df["flowDirection.name"] = df["flowDirection.name"].str.lower()
+    df["metric.name"] = df["metric.name"].str.lower()
+
+    dim_energy_category["energyCategory.name"] = dim_energy_category[
+        "energyCategory.name"
+    ].str.lower()
+    dim_energy_sub_category["energySubCategory.name"] = dim_energy_sub_category[
+        "energySubCategory.name"
+    ].str.lower()
+    dim_flow_direction["flowDirection.name"] = dim_flow_direction[
+        "flowDirection.name"
+    ].str.lower()
+    dim_metric["metric.name"] = dim_metric["metric.name"].str.lower()
+
     # Merge the DataFrame with dimension tables using the names
     fact_energy_metrics = (
         df.merge(dim_energy_category, on="energyCategory.name", how="left")
@@ -55,6 +75,7 @@ def make_fact_energy_metrics(df: pd.DataFrame, dimensions: dict):
         fact_energy_metrics["energySubCategory.id"].isna(), "energySubCategory.id"
     ] = 1  # Assuming 1 is for NaN
 
+    print(fact_energy_metrics)
     # Validate relationships
     validate_energy_relationships(
         fact_energy_metrics, dim_energy_category, dim_energy_sub_category
@@ -92,20 +113,21 @@ def validate_energy_relationships(
         "self-generated non-fuel energy": ["Renewable"],
         "wind": ["Renewable"],
         "solar": ["Renewable"],
+        "unknown": ["Fossil", "Renewable", "Nuclear"],
     }
 
     # Check each row in the fact DataFrame
     for index, row in fact_df.iterrows():
         subcategory_id = row["energySubCategory.id"]
         category_id = row["energyCategory.id"]
-
+        print(f"Subcategory : {subcategory_id}")
+        print(f"Category : {category_id}")
         # Get subcategory name from the subcategory dimension
         subcategory_name = dim_subcategory.loc[
             dim_subcategory["energySubCategory.id"] == subcategory_id,
             "energySubCategory.name",
         ].values
 
-        # TODO : Validate this check (and the one for category.)
         # If the dimension is created from the excel file it should always exist making this check irrelevant.
         if not subcategory_name.size:
             raise ValueError(
@@ -113,9 +135,6 @@ def validate_energy_relationships(
             )
 
         subcategory_name = subcategory_name[0]
-
-        if pd.isna(subcategory_name):
-            continue  # Skip NaN for the empty subcategories
 
         # Check if the subcategory has valid associated categories
         expected_categories = valid_relationships.get(
@@ -132,13 +151,13 @@ def validate_energy_relationships(
             dim_category["energyCategory.id"] == category_id, "energyCategory.name"
         ].values
 
-        # TODO : Like above, valide this check.
         if not actual_category.size:
             raise ValueError(
                 f"Category ID '{category_id}' not found in category dimension."
             )
 
-        actual_category = actual_category[0]
+        actual_category = actual_category[0].lower()
+        expected_categories = [cat.lower() for cat in expected_categories]
 
         # Check if the actual category is in the expected categories
         if actual_category not in expected_categories:

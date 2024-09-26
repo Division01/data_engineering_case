@@ -49,9 +49,9 @@ class DimensionMetric(Dimension):
         for index, row in self.dim.iterrows():
             cursor.execute(
                 """
-                INSERT INTO dim_metric (metric_id, metric_name, metric_unit)
+                INSERT INTO dim_metric (id, name, unit)
                 VALUES (%s, %s, %s)
-                ON CONFLICT (metric_id) DO NOTHING;
+                ON CONFLICT (id) DO NOTHING;
                 """,
                 (
                     (

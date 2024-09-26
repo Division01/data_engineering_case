@@ -3,29 +3,41 @@ from dimensions.dim_class import Dimension
 from custom_library import check_data_types
 import psycopg2
 import numpy as np
+from config import FLOW_DIRECTION_FILE_PATH
 
 
 class DimensionFlowDirection(Dimension):
     def make_dim(self) -> None:
         """
         Creates a dimension for flow directions.
-        Returns a DataFrame with flowDirection.id and flowDirection.name.
+        Returns a DataFrame with flowDirection.id, flowDirection.name,
+        and flowDirection.description.
         """
-        # Create the dimension
-        dim_flow_direction = (
-            self.df[["flowDirection.name"]].drop_duplicates().reset_index(drop=True)
+        # Load data from the Excel file (assuming it's in self.df)
+        dim_flow_direction = pd.read_excel(FLOW_DIRECTION_FILE_PATH)
+
+        # Rename columns to match the expected schema
+        dim_flow_direction = dim_flow_direction.rename(
+            columns={
+                "name": "flowDirection.name",  # Rename Name column to flowDirection.name
+                "description": "flowDirection.description",  # Rename Description to flowDirection.description
+            }
         )
+
+        # Create a unique ID for each flow direction
         dim_flow_direction["flowDirection.id"] = dim_flow_direction.index + 1
 
         # Define expected data types
         expected_types = {
             "flowDirection.id": "int64",  # Expecting integer for ID
-            "flowDirection.name": "object",  # Expecting string for name
+            "flowDirection.name": "object",  # Expecting string for flow direction name
+            "flowDirection.description": "object",  # Expecting string for flow direction description
         }
 
         # Check data types
         check_data_types(dim_flow_direction, expected_types)
 
+        # Assign the final DataFrame to the dimension
         self.dim = dim_flow_direction
 
     def load(self) -> None:
@@ -46,9 +58,9 @@ class DimensionFlowDirection(Dimension):
         for index, row in self.dim.iterrows():
             cursor.execute(
                 """
-                INSERT INTO dim_flow_direction (flowDirection_id, flowDirection_name)
-                VALUES (%s, %s)
-                ON CONFLICT (flowDirection_id) DO NOTHING;
+                INSERT INTO dim_flow_direction (id, name, description)
+                VALUES (%s, %s, %s)
+                ON CONFLICT (id) DO NOTHING;
                 """,
                 (
                     (
@@ -57,6 +69,7 @@ class DimensionFlowDirection(Dimension):
                         else row["flowDirection.id"]
                     ),
                     row["flowDirection.name"],
+                    row["flowDirection.description"],
                 ),
             )
 

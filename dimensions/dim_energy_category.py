@@ -3,30 +3,56 @@ from dimensions.dim_class import Dimension
 from custom_library import check_data_types
 import psycopg2
 import numpy as np
+from config import ENERGY_CATEGORY_FILE_PATH
 
 
 class DimensionEnergyCategory(Dimension):
     def make_dim(self) -> None:
         """
-        Creates a dimension for energy categories.
-        Checks if the data type is the one expected.
-        Returns a DataFrame with energyCategory.id and energyCategory.name.
-        """
-        # Create the dimension
-        dim_energy_category = (
-            self.df[["energyCategory.name"]].drop_duplicates().reset_index(drop=True)
-        )
-        dim_energy_category["energyCategory.id"] = dim_energy_category.index + 1
+        Creates a dimension for energy categories from EnergyCategory.xlsx.
+        Checks that the number of unique categories in the Excel file matches the input DataFrame.
 
-        # Define expected data types
+        """
+        # Load the initial dimension from EnergyCategory.xlsx
+        dim_energy_category = pd.read_excel(ENERGY_CATEGORY_FILE_PATH)
+
+        # Rename columns to match expected format
+        dim_energy_category.rename(
+            columns={
+                "name": "energyCategory.name",
+                "description": "energyCategory.description",
+            },
+            inplace=True,
+        )
+
+        # Assign IDs (since they are not present in your file)
+        dim_energy_category["energyCategory.id"] = range(
+            1, len(dim_energy_category) + 1
+        )
+
+        # Verify that the number of categories in the Excel file matches the input DataFrame
+        unique_categories_input = self.df["energyCategory.name"].nunique()
+        unique_categories_excel = dim_energy_category["energyCategory.name"].nunique()
+
+        if unique_categories_input != unique_categories_excel:
+            print(
+                f"Warning: Mismatch in category counts! "
+                f"Input DataFrame: {unique_categories_input}, "
+                f"Excel File: {unique_categories_excel}"
+            )
+        else:
+            print("Category count matches between the input DataFrame and Excel file.")
+
+        # Define expected data types and validate data types
         expected_types = {
             "energyCategory.id": "int64",  # Expecting integer for ID
             "energyCategory.name": "object",  # Expecting string for category name
+            "energyCategory.description": "object",  # Expecting string for description
         }
 
-        # Check data types
         check_data_types(dim_energy_category, expected_types)
 
+        # Store the dimension
         self.dim = dim_energy_category
 
     def load(self) -> None:
@@ -47,9 +73,9 @@ class DimensionEnergyCategory(Dimension):
         for index, row in self.dim.iterrows():
             cursor.execute(
                 """
-                INSERT INTO dim_energy_category (energyCategory_id, energyCategory_name)
-                VALUES (%s, %s)
-                ON CONFLICT (energyCategory_id) DO NOTHING;
+                INSERT INTO dim_energy_category (id, name, description)
+                VALUES (%s, %s, %s)
+                ON CONFLICT (id) DO NOTHING;
                 """,
                 (
                     (
@@ -58,6 +84,7 @@ class DimensionEnergyCategory(Dimension):
                         else row["energyCategory.id"]
                     ),
                     row["energyCategory.name"],
+                    row["energyCategory.description"],
                 ),
             )
 

@@ -26,21 +26,25 @@ if __name__ == "__main__":
     dim_date = DimensionDate(raw_df=df, db_config=db_config)
     dim_date.transform()
     dim_date.load()
+    print(dim_date.dim)
 
     # DimensionEnergySubCategory
     dim_energy_subcategory = DimensionEnergySubCategory(raw_df=df, db_config=db_config)
     dim_energy_subcategory.transform()
     dim_energy_subcategory.load()
+    print(dim_energy_subcategory.dim)
 
     # DimensionFlowDirection
     dim_flow_direction = DimensionFlowDirection(raw_df=df, db_config=db_config)
     dim_flow_direction.transform()
     dim_flow_direction.load()
+    print(dim_flow_direction.dim)
 
     # DimensionMetric
     dim_metric = DimensionMetric(raw_df=df, db_config=db_config)
     dim_metric.transform()
     dim_metric.load()
+    print(dim_metric.dim)
 
     dimensions = {
         "dim_energy_category": dim_energy_category.dim,
@@ -50,6 +54,7 @@ if __name__ == "__main__":
         "dim_metric": dim_metric.dim,
     }
 
+    print(dim_metric.df)
     # Create fact table and load into the database
     # We use dim_metric.df instead of df to get the cleaned one.
     fact_energy_metrics = make_fact_energy_metrics(

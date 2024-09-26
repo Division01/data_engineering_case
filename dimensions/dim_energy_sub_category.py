@@ -3,28 +3,62 @@ from dimensions.dim_class import Dimension
 from custom_library import check_data_types
 import psycopg2
 import numpy as np
+from config import ENERGY_SUBCATEGORY_FILE_PATH
 
 
 class DimensionEnergySubCategory(Dimension):
     def make_dim(self) -> None:
         """
-        Creates a dimension for energy subcategories.
-        Returns a DataFrame with energySubCategory.id and energySubCategory.name.
+        Creates a dimension for energy subcategories from EnergySubCategory.xlsx.
+        Dimension of type : []
         """
-        # Create the dimension
-        dim_energy_subcategory = (
-            self.df[["energySubCategory.name"]].drop_duplicates().reset_index(drop=True)
+        # Load the initial dimension from EnergySubCategory.xlsx
+        dim_energy_subcategory = pd.read_excel(ENERGY_SUBCATEGORY_FILE_PATH)
+
+        # Rename columns to match expected format
+        dim_energy_subcategory.rename(
+            columns={
+                "name": "energySubCategory.name",
+                "description": "energySubCategory.description",
+                "Associated energyCategory": "energySubCategory.associatedEnergyCategory",
+            },
+            inplace=True,
         )
-        dim_energy_subcategory["energySubCategory.id"] = (
-            dim_energy_subcategory.index + 1
+
+        # Create the "Unknown" subcategory row as a DataFrame
+        unknown_subcategory = pd.DataFrame(
+            {
+                "energySubCategory.name": ["Unknown"],
+                "energySubCategory.description": [
+                    "Total energy category consumption for the year"
+                ],
+                "energySubCategory.associatedEnergyCategory": [
+                    "Fossil"
+                ],  # Adjust this as needed
+            }
         )
-        # Define expected data types
+
+        # Assuming dim_energy_subcategory is already defined
+        dim_energy_subcategory = pd.concat(
+            [dim_energy_subcategory, unknown_subcategory], ignore_index=True
+        )
+
+        # Assign IDs (since they are not present in the Excel file)
+        dim_energy_subcategory["energySubCategory.id"] = range(
+            1, len(dim_energy_subcategory) + 1
+        )
+
+        # Define expected data types and validate
         expected_types = {
-            "energySubCategory.id": "int64",  # Expecting integer for ID
+            "energySubCategory.id": "int64",  # Expecting integer for subcategory ID
             "energySubCategory.name": "object",  # Expecting string for subcategory name
+            "energySubCategory.description": "object",  # Expecting string for description
+            "energySubCategory.associatedEnergyCategory": "object",  # List of associated categories
         }
-        # Check data types
+
         check_data_types(dim_energy_subcategory, expected_types)
+
+        # Store the dimension (with no formal link, just a check)
         self.dim = dim_energy_subcategory
 
     def load(self):
@@ -46,9 +80,9 @@ class DimensionEnergySubCategory(Dimension):
         for index, row in self.dim.iterrows():
             cursor.execute(
                 """
-                INSERT INTO dim_energy_subcategory (energySubCategory_id, energySubCategory_name)
-                VALUES (%s, %s)
-                ON CONFLICT (energySubCategory_id) DO NOTHING;
+                INSERT INTO dim_energy_subcategory (id, name, description, associatedEnergyCategory)
+                VALUES (%s, %s, %s, %s)
+                ON CONFLICT (id) DO NOTHING;
                 """,
                 (
                     (
@@ -57,6 +91,8 @@ class DimensionEnergySubCategory(Dimension):
                         else row["energySubCategory.id"]
                     ),
                     row["energySubCategory.name"],
+                    row["energySubCategory.description"],
+                    row["energySubCategory.associatedEnergyCategory"],
                 ),
             )
 
