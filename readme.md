@@ -1,5 +1,9 @@
 # Energy Consumption Data Pipeline
 
+## Before diving into code
+The branch is the most up-to-date version of this code. I'm keeping this main as it is know for education purposes.
+I might do the swap (branch to main/main to branch) when I'll find time to do it.
+
 ## Overview
 This project involves creating a data pipeline to extract, transform, and load (ETL) energy consumption data into a structured database. The primary goal is to enable data visualization through a BI dashboard, allowing for various breakdowns of energy consumption metrics.
 
